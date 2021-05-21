@@ -1,0 +1,185 @@
+* {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.headerContainer {
+  height: 100vh;
+  width: 100%;
+  background-color: green;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  height: 33px;
+  width: 100%;
+  background-color: red;
+  padding: 0.5%;
+
+  position: relative;
+}
+
+.logo {
+  background-color: yellow;
+  float: left;
+  width: 250px;
+  height: 30px;
+}
+
+.navlinks {
+  float: right;
+  position: absolute;
+  width: 40%;
+  height: 30px;
+  background-color: purple;
+  right: 1.5%;
+}
+
+.innerContainer {
+  width: auto;
+  height: 100%;
+  background-color: maroon;
+  margin: 1%;
+  padding: 1%;
+}
+
+.canvasContainer {
+  width: 70%;
+  height: 100%;
+  background-color: lightcoral;
+  float: left;
+  visibility: hidden;
+}
+
+.rightContainer {
+  width: 30%;
+  height: 100%;
+  background-color: blue;
+  float: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.inputArea {
+  width: auto;
+  height: 40%;
+  margin: 1%;
+  background-color: white;
+  padding: 1%;
+  display: flex;
+  flex-direction: column;
+}
+
+.inputArea label {
+  font-size: 20px;
+}
+
+.inputArea input[type="text"] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 5px 0;
+  box-sizing: border-box;
+  border: none;
+  background-color: lightgray;
+  color: black;
+}
+
+.slidecontainer {
+  width: 100%; /* Width of the outside container */
+  background-color: gray;
+  height: 25px;
+  display: flex;
+}
+
+/* The slider itself */
+.sldr {
+  appearance: none;
+  width: 80%;
+  height: 25px;
+  border-radius: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  float: left;
+}
+
+/* Mouse-over effects */
+.sldr:hover {
+  opacity: 1; /* Fully shown on mouse-over */
+}
+
+.slidecontainer .sliderOutput {
+  text-align: center;
+  line-height: 25px;
+  width: 20%;
+  height: 25px;
+  float: right;
+  color: black;
+}
+
+.toggleAndButtons {
+  width: auto;
+  height: auto;
+  flex-grow: 1;
+  background-color: maroon;
+  padding: 2%;
+  align-items: center;
+}
+/*toggle button stuff*/
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+/*to make the innner box move left and right*/
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #2196f3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* end toggle button stuff*/
+.ouputContainer {
+  width: auto;
+  flex-grow: 1;
+  margin: 1%;
+  background-color: purple;
+  padding: 1%;
+}

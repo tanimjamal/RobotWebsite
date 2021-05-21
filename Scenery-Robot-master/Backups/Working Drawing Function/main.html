@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--  This is the css for the index.html page-->
+    <link rel="stylesheet" href="styles.css" />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="headerContainer">
+      <div class="navbar">
+        <div class="logo"></div>
+        <div class="navlinks"></div>
+      </div>
+      <canvas id="myCanvas" class="canvasContainer"></canvas>
+      <script>
+        canvas = document.getElementById("myCanvas"); //get the canvas by name
+        var ctx = canvas.getContext("2d"); //set its dimentions to 2d
+        ctx.canvas.width = canvas.getBoundingClientRect().width;
+        ctx.canvas.height = canvas.getBoundingClientRect().height;
+
+        //setting the pen color and size
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#c0392b";
+        // last known position
+        var pos = { x: 100, y: 100 }; //the initial values of this list dont matter as they are overwritten by the current position of the pointer
+
+        //get the x, y, height, and width position of the canvas
+        canvasX = canvas.getBoundingClientRect().x;
+        canvasY = canvas.getBoundingClientRect().y;
+        canvasWidth = canvas.getBoundingClientRect().width;
+        canvasHeight = canvas.getBoundingClientRect().height;
+
+        console.log(canvasX, canvasY, canvasWidth, canvasHeight);
+
+        //checking if mouse clicked is inside of the element
+        document.body.addEventListener("click", function (event) {
+          if (canvas.contains(event.target)) {
+            console.log("inside");
+          } else {
+            console.log("outside");
+          }
+        });
+
+        document.addEventListener("mousemove", function (event) {
+          if (canvas.contains(event.target)) {
+            draw(window.event);
+          }
+        });
+        document.addEventListener("mousedown", function (event) {
+          if (canvas.contains(event.target)) {
+            setPosition(window.event);
+          }
+        });
+
+        // new position from mouse event
+        function setPosition(e) {
+          pos.x = event.pageX - canvas.getBoundingClientRect().left - scrollX;
+          pos.y = event.pageY - canvas.getBoundingClientRect().top - scrollY;
+        }
+        /*
+        function setPosition(e) {
+          valueX = event.pageX - canvas.getBoundingClientRect().left - scrollX;
+          valueY = event.pageY - canvas.getBoundingClientRect().top - scrollY;
+          console.log(valueX, valueY);
+          if (valueX >= canvasX && valueX <= canvasX + canvasWidth) {
+            pos.x = valueX;
+          }
+          if (valueY >= canvasY && valueY <= canvasY + canvasHeight) {
+            pos.y = valueY;
+          }()
+        }*/
+        function draw(e) {
+          // mouse left button must be pressed
+          if (e.buttons !== 1) return;
+
+          ctx.beginPath(); // begin
+
+          ctx.moveTo(pos.x, pos.y); // from
+          setPosition(e);
+          ctx.lineTo(pos.x, pos.y); // to
+
+          ctx.stroke(); // draw it!
+          console.log(pos);
+        }
+      </script>
+    </div>
+  </body>
+</html>

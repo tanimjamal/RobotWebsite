@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--  This is the css for the index.html page-->
+    <link rel="stylesheet" href="styles.css" />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="headerContainer">
+      <!--          This is the navbar        -->
+      <div class="navbar">
+        <div class="logo"></div>
+        <div class="navlinks"></div>
+      </div>
+
+      <!--          This container holds the canvas and the right input and output container        -->
+      <div class="innerContainer">
+        <!--          These are the canvases       -->
+        <div class = "leftContainer"> 
+          <canvas
+          id="gridCanvas"
+          class="backgroundCanvas"> <!-- This canvas stores grid lines-->
+        </canvas>
+        <canvas
+          id="drawingCanvas"
+          class="topCanvas"><!-- This canvas stores user drawn lines-->
+        </canvas>
+        <canvas 
+          id="pointsCanvas"
+          class="pointsCanvas"> <!-- This canvas is used to display the extracted points-->
+        </canvas>
+        <div class="popup" onclick = "newTrack()">New Track </div>
+        <span class="popuptext" id="myPopup">Invalid Stage Dimensions</span>
+        <span class="pointsPopup" id="pointsPopup">Points Are On</span>
+        <!--   <span class="popuptext" id="myPopup">Fix the Dimensions </span> -->
+        <div class = "stageDimensions" id = "displayDim">
+          Width:
+          <br>
+          Length:
+        </div>
+        </div>
+
+        <!--          This is the right side input and output contianer       -->
+        <div class="rightContainer">
+
+          <!--          This is the top input area of the right contianer        -->
+          <div class="inputArea">
+            <form>
+              <label for="width">Width of Stage:</label>
+              <input id = "stageWidth" type="text" value="" />
+              <label for="length">Length of Stage:</label>
+              <input id = "stageHeight" type="text" value="" />
+            </form>
+            <h5>Number of Points to Extract (In X second intervals)</h5>
+            <div class="slidecontainer">
+              <input
+                type="range"
+                min=".01"
+                max="1"
+                step=".01"
+                value=".05"
+                class="sldr"
+                id="myRange"
+              ></input >
+              <p id = "demo" class="sliderOutput"></p>
+            </div>
+            <div class = "toggleAndButtons">
+              <label class="switch">
+                <input onclick="myFunction()" type="checkbox">
+                <span class="slider"></span>
+              </label>
+              <button type="clearButton" onclick = "reloadPage()"> Reset </button>
+              <button onclick = "displayPoints()" type="getPoints">Get Points</button>
+            </div>
+          </div>
+
+          <!--          This is the  bottom output container      -->
+          <div class = "ouputContainer">
+            <div class = "xAndYCoordinates" id = "xAndYCoordinates"> </div>
+            <div class = controls> 
+              <div class = "buttonInnerContainer">
+                <button id = "undoButton"> Undo Drawing</button>
+                <button> Copy Points to Clipboard</button>
+              </div>
+              <div class = "buttonInnerContainer">
+                <button onclick = "drawCoordinates()"> Draw Points</button>
+                <button> Save Points to File</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!-- Javascript-->
+<script>
+  /*                          The following code is for displaying the grid in the background              */
+  var isGridToggled = false;
+  function myFunction() {
+    var elnt = document.getElementById("gridCanvas");
+    if (isGridToggled == false) {
+      isGridToggled  = true;
+      elnt.style.visibility = "visible";
+      displayGrid();
+    } else {
+      elnt.style.visibility = "hidden";
+      isGridToggled = false;
+    }
+  }
+
+    //The following code draws a grid on a canvas
+  //in order to get the grid to turn on and off, we will have to stack two canvas' on top of each other:
+  //one canvas will be for the grid, one will be for user drawing. When the grid switch is toggled, the grid canvas is set to visible
+  gridCanvas = document.getElementById("gridCanvas"); //get the canvas by name
+  var ctx = gridCanvas.getContext("2d"); //set its dimentions to 2d
+  ctx.canvas.width = gridCanvas.getBoundingClientRect().width;
+  ctx.canvas.height = gridCanvas.getBoundingClientRect().height;
+
+  gridWidth = gridCanvas.getBoundingClientRect().width;
+  gridHeight = gridCanvas.getBoundingClientRect().height;
+  function displayGrid(){
+    var p = 0;
+    clearGrid();
+    function drawBoard() {
+      //Prints all the vertical lines of the grid
+      for (var x = 0; x <= gridWidth; x += gridCanvas.getBoundingClientRect().width / 40) {
+        ctx.moveTo(x + p, p);
+        ctx.lineTo(x + p, gridHeight + p);
+      }
+      //Prints all the horizontal lines of the grid
+      for (var x = 0; x <= gridHeight; x += gridCanvas.getBoundingClientRect().height / 24) {
+        ctx.moveTo(p, x + p);
+        ctx.lineTo(gridWidth + p, x + p);
+      }
+      
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    drawBoard();
+  }
+
+  function clearGrid(){
+    ctx = null;
+    ctx = gridCanvas.getContext("2d"); //set its dimentions to 2d
+    ctx.canvas.width = gridCanvas.getBoundingClientRect().width;
+    ctx.canvas.height = gridCanvas.getBoundingClientRect().height;
+  }
+/*                                              end Grid Code                                      */
+
+/*                                    Start User Drawing  Code                                 */
+drawingCanvas = document.getElementById("drawingCanvas"); //get the canvas by name
+var context = drawingCanvas.getContext("2d"); //set its dimentions to 2d
+context.canvas.width = drawingCanvas.getBoundingClientRect().width;
+context.canvas.height = drawingCanvas.getBoundingClientRect().height;
+
+//specify the paint brush
+context.lineWidth = 1;
+context.lineCap = "round";
+context.strokeStyle = "black";
+var pos = { x: 0, y: 0 }; //the initial values of this list dont matter as they are overwritten by the current position of the pointer
+var fullMouseHistoryX=[];
+var fullMouseHistoryY=[];
+var pointsAndMouseRelationHistory = [];
+//checking if mouse clicked is inside of the element
+//helper function to ensure what we select is inside the container
+document.body.addEventListener("click", function (event) {
+  if (drawingCanvas.contains(event.target)) {
+    console.log("inside");
+  } else {
+    console.log("outside");
+  }
+});
+
+document.addEventListener("mousemove", function (event) {
+  if (drawingCanvas.contains(event.target)) {
+    draw(window.event);
+  }
+});
+document.addEventListener("mousedown", function (event) {
+  if (drawingCanvas.contains(event.target)) {
+    setPosition(window.event);
+  }
+});
+
+// new position from mouse event
+function setPosition(e) {
+  var rect = drawingCanvas.getBoundingClientRect();
+  currentXPos = (event.clientX - rect.left) / (rect.right - rect.left) * drawingCanvas.width;
+  currentYPos = (event.clientY - rect.top) / (rect.bottom - rect.top) * drawingCanvas.height;
+  if(fullMouseHistoryX.length > 0 && fullMouseHistoryY.length > 0){
+    var r = new MyRect(fullMouseHistoryX[fullMouseHistoryX.length-1]-10, fullMouseHistoryY[fullMouseHistoryY.length-1]-10, 20, 20);
+    console.log(currentXPos, currentYPos);
+    r.toString();
+    if(r.contains(currentXPos, currentYPos)){
+      
+      pos.x = currentXPos;
+      pos.y = currentYPos;
+      fullMouseHistoryX.push(pos.x);
+      fullMouseHistoryY.push(pos.y);
+    }
+  }else{
+    pos.x = currentXPos;
+    pos.y = currentYPos;
+    console.log("ypOs: "+pos.y);
+    fullMouseHistoryX.push(pos.x);
+    fullMouseHistoryY.push(pos.y);
+  }
+}
+
+function MyRect (x, y, w, h) {
+  this.x = x;
+  this.y = y;
+  this.width = w;
+  this.height = h;
+
+  this.contains = function (x, y) {
+      return this.x <= x && x <= this.x + this.width &&
+              this.y <= y && y <= this.y + this.height;
+  }
+  this.draw = function (ctx) {
+        ctx.strokeStyle = "black";
+        ctx.rect(this.x, this.y, this.width, this.height)
+    }
+  this.toString = function(){
+    console.log("x: "+this.x," y: "+ this.y," width: " + this.width," height: " +this.height);
+  }
+}
+var isValidToDraw = false;
+var isDrawing = false;
+function draw(e) {
+  // mouse left button must be pressed
+  if(isValidToDraw == true){
+    if (e.buttons !== 1) return;
+    context.strokeStyle = "black";
+    context.lineWidth = 1;
+    //console.log("i am drawing");
+    isDrawing = true;
+    context.beginPath(); // begin
+    context.moveTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]); // from
+    setPosition(e);
+    context.lineTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]); // to
+    context.stroke(); // draw it!
+  }
+}
+
+  var undoTimer;
+document.getElementById("undoButton").onmousedown = function(event) {
+  //mouse position is recorded everyso intervals, so we can make it that after "undoing that many intervals, the point can be remove"
+  context.lineWidth = 5;
+  context.lineCap = "round";
+  context.strokeStyle = "white";
+  //console.log(fullMouseHistoryX);
+  //console.log(fullMouseHistoryY);
+  console.log("i thought we came in here");
+  undoTimer = setInterval(function(){ 
+    //console.log("undo BUtton pressed");
+    context.beginPath(); // begin
+    context.moveTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]);
+    fullMouseHistoryX.pop();
+    fullMouseHistoryY.pop();
+    context.lineTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]);
+    fullMouseHistoryX.pop();
+    fullMouseHistoryY.pop();
+    context.stroke();
+
+    //if(fullMouseHistoryX.length <= pointsAndMouseRelationHistory[pointsAndMouseRelationHistory.length-1]){
+    var CanvasX = ((mouseHistoryX[mouseHistoryX.length-1]/ stageWidth)* document.getElementById("pointsCanvas").getBoundingClientRect().width).toFixed(2);
+    var CanvasY = ((((mouseHistoryY[mouseHistoryY.length-1]-stageHeight)/-1)/stageHeight)*document.getElementById("pointsCanvas").getBoundingClientRect().height).toFixed(2);
+    var r = new MyRect(CanvasX-25, CanvasY-25, 50, 50);
+    r.toString();
+    console.log("location of mouse: " , fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]);
+    if(r.contains(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1])){
+      console.log("it does contain");
+      mouseHistoryX.pop();
+      mouseHistoryY.pop();
+      calculatePoints();
+      displayPoints();
+    }
+  }, 5);
+}
+
+document.getElementById("undoButton").onclick = function(event) {
+  //console.log("undo  pressed");
+  context.lineWidth = 4;
+  context.strokeStyle = "white";
+  context.beginPath(); // begin
+  context.moveTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]);
+  fullMouseHistoryX.pop();
+  fullMouseHistoryY.pop();
+  context.lineTo(fullMouseHistoryX[fullMouseHistoryX.length-1], fullMouseHistoryY[fullMouseHistoryY.length-1]);
+  fullMouseHistoryX.pop();
+  fullMouseHistoryY.pop();
+  context.stroke();
+  context.lineWidth = 1;
+  context.strokeStyle = "black";
+}
+
+document.getElementById("undoButton").onmouseup = function(event) {
+  clearInterval(undoTimer);
+  context.lineWidth = 1;
+  context.strokeStyle = "black";
+  //console.log("undo timer done");
+}
+
+/*                                    End User Drawing  Code                                 */
+
+/*                                    This is range stuff for seconds                              */
+var slider = document.getElementById("myRange");
+var output = document.getElementById("demo");
+output.innerHTML = slider.value +" sec";
+
+slider.oninput = function () {
+  output.innerHTML = this.value + " sec";
+};
+/*                                    End range slider section                                        */
+
+/*                                Start Input dimensions section                  */
+var stageWidth = 0;
+var stageHeight = 0;
+var interval = 0;
+var isToggled = false;
+function newTrack(){
+  stageWidth = document.getElementById("stageWidth").value;
+  stageHeight = document.getElementById("stageHeight").value;
+  interval = document.getElementById("myRange").value * 1000; // this will turn the seconds into milliseconds
+  console.log(stageWidth, stageHeight, interval);
+
+  var popup = document.getElementById("myPopup");
+  if(stageWidth == 0 || stageHeight == 0){
+    popup.classList.toggle("show");
+    isToggled = true;
+  }else{
+    isValidToDraw = true;
+    if(isToggled == true){
+      popup.classList.toggle("show"); //this will remove the pop up warning
+      isToggled = false;
+    }
+    document.getElementById("displayDim").innerHTML = "Width: " + stageWidth + " inches \n" + "Height: " + stageHeight + " inches";
+    recordMouseHistory();
+  }
+}
+/*                                end input dimensions section                           */
+
+/*                                get mouse position at specific intervals and then display them                 */
+
+var mouseHistoryX = [];
+var mouseHistoryY = [];
+var realX, realY;
+var timer;
+function recordMouseHistory(){ // convert the units from pixels to real world inches
+  console.log("only Toggled when new track is clicked");
+  document.onmousedown = function(){
+    var rect = drawingCanvas.getBoundingClientRect();
+    if(drawingCanvas.contains(event.target)){
+      mouseHistoryX.push(((pos.x / rect.width) * stageWidth).toFixed(2));
+      mouseHistoryY.push((stageHeight-((pos.y / rect.height) * stageHeight)).toFixed(2));
+      timer = setInterval(function(){ 
+        //at each interval we record the position of the mouse in an array
+        console.log("i am in here");
+        pointsAndMouseRelationHistory.push(fullMouseHistoryX.length);
+        realX = ((pos.x / rect.width) * stageWidth).toFixed(2);
+        realY = (stageHeight-((pos.y / rect.height) * stageHeight)).toFixed(2);
+        //console.log(realX, realY);
+        mouseHistoryX.push(realX);
+        mouseHistoryY.push(realY);
+      }, interval);
+    }
+  }
+}
+
+//the timer starts when the mouse is pressed and stops when the mouse is unpressed
+document.onmouseup = function(){
+    clearInterval(timer);
+}
+
+//display the points in the bottom right output section
+function displayPoints(){
+  document.getElementById("xAndYCoordinates").innerHTML = "";
+  for(var i = 0; i < mouseHistoryX.length; i++ ){
+    document.getElementById("xAndYCoordinates").innerHTML += "(" +mouseHistoryX[i] + ", " + mouseHistoryY[i] + "), ";
+  }
+  //document.getElementById("xAndYCoordinates").style.pointerEvents= "none";
+}
+
+//function to reload the page and reset everything
+function reloadPage(){
+  //console.log("came to the reload function");
+  location = location.href;
+}
+
+
+/*                                    Draw points received on a canvas Section                          */
+var isPointsToggled = false;
+function drawCoordinates(){
+  var elnt = document.getElementById("pointsCanvas");
+  if(isPointsToggled == false){
+    isPointsToggled = true;
+    elnt.style.visibility = "visible";
+    document.getElementById("pointsPopup").style.visibility = "visible";
+    calculatePoints();
+  }else{
+    elnt.style.visibility = "hidden";
+    document.getElementById("pointsPopup").style.visibility = "hidden";
+    isPointsToggled = false;
+  }
+}
+
+function calculatePoints(){
+  var pointsCanvas = document.getElementById("pointsCanvas");
+  var rect = pointsCanvas.getBoundingClientRect();
+  var ctx ="";
+  ctx = pointsCanvas.getContext("2d"); //set its dimentions to 2d
+  ctx.canvas.width = pointsCanvas.getBoundingClientRect().width;
+  ctx.canvas.height = pointsCanvas.getBoundingClientRect().height;
+
+  //setting up the brush for all the points
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "green";
+
+  ctx.beginPath(); // begin
+  for(var i = 0; i < mouseHistoryX.length; i++){
+    pointsCanvasX = ((mouseHistoryX[i] / stageWidth)* rect.width).toFixed(2);
+    pointsCanvasY = ((((mouseHistoryY[i]-stageHeight)/-1)/stageHeight)*rect.height).toFixed(2);
+    if(pointsCanvasX != null && pointsCanvasY != null ){
+      ctx.moveTo(pointsCanvasX, pointsCanvasY); // from
+      ctx.lineTo(pointsCanvasX, pointsCanvasY); // to
+      ctx.stroke();
+    }
+  }
+}
+/*                                  End  Draw points received on a canvas Section                          */
+</script>

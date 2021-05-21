@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--  This is the css for the index.html page-->
+    <link rel="stylesheet" href="styles.css" />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="headerContainer">
+      <!--          This is the navbar        -->
+      <div class="navbar">
+        <div class="logo"></div>
+        <div class="navlinks"></div>
+      </div>
+
+      <!--          This container holds the canvas and the right input and output container        -->
+      <div class="innerContainer">
+        <!--          This is the canvas       -->
+        <canvas
+          onclick="loadCanvasDimensions(60, 30)"
+          id="myCanvas"
+          class="canvasContainer"
+        >
+        </canvas>
+
+        <!--          This is the right side input and output contianer       -->
+        <div class="rightContainer">
+
+          <!--          This is the top input area of the right contianer        -->
+          <div class="inputArea">
+            <form>
+              <label for="width">Width of Stage:</label>
+              <input type="text" value="" />
+              <label for="length">Length of Stage:</label>
+              <input type="text" value="" />
+            </form>
+            <h5>Number of Points to Extract (In X second intervals)</h5>
+            <div class="slidecontainer">
+              <input
+                type="range"
+                min=".1"
+                max="10"
+                step=".1"
+                value="5"
+                class="sldr"
+                id="myRange"
+              ></input >
+              <p id = "demo" class="sliderOutput"></p>
+            </div>
+            <div class = "toggleAndButtons">
+              <label class="switch">
+                <input onclick="myFunction()" type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!--          This is the  bottom output container      -->
+          <div class = "ouputContainer">
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!-- THE Javascript Code-->
+<script>
+  canvas = document.getElementById("myCanvas"); //get the canvas by name
+  var ctx = canvas.getContext("2d"); //set its dimentions to 2d
+  ctx.canvas.width = canvas.getBoundingClientRect().width;
+  ctx.canvas.height = canvas.getBoundingClientRect().height;
+
+  //setting the pen color and size
+  ctx.lineWidth = 1;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#c0392b";
+  // last known position
+  var pos = { x: 0, y: 0 }; //the initial values of this list dont matter as they are overwritten by the current position of the pointer
+
+  //get the x, y, height, and width position of the canvas
+  canvasX = canvas.getBoundingClientRect().x;
+  canvasY = canvas.getBoundingClientRect().y;
+  canvasWidth = canvas.getBoundingClientRect().width;
+  canvasHeight = canvas.getBoundingClientRect().height;
+
+  console.log(canvasX, canvasY, canvasWidth, canvasHeight);
+
+  //checking if mouse clicked is inside of the element
+  document.body.addEventListener("click", function (event) {
+    if (canvas.contains(event.target)) {
+      console.log("inside");
+    } else {
+      console.log("outside");
+    }
+  });
+
+  document.addEventListener("mousemove", function (event) {
+    if (canvas.contains(event.target)) {
+      draw(window.event);
+    }
+  });
+  document.addEventListener("mousedown", function (event) {
+    if (canvas.contains(event.target)) {
+      setPosition(window.event);
+    }
+  });
+
+  // new position from mouse event
+  function setPosition(e) {
+    pos.x = event.pageX - canvas.getBoundingClientRect().left - scrollX;
+    pos.y = event.pageY - canvas.getBoundingClientRect().top - scrollY;
+  }
+
+  function draw(e) {
+    // mouse left button must be pressed
+    if (e.buttons !== 1) return;
+
+    ctx.beginPath(); // begin
+
+    ctx.moveTo(pos.x, pos.y); // from
+    setPosition(e);
+    ctx.lineTo(pos.x, pos.y); // to
+
+    ctx.stroke(); // draw it!
+    console.log(pos);
+  }
+
+  /*
+  function loadCanvasDimensions(wid, hei) {
+    ctx.font = "20px Georgia";
+    ctx.fillText("Width: " + wid + " in", 10, 20);
+    ctx.fillText("Height: " + hei + " in", 10, 40);
+  }*/
+
+  /*THE sec interval stuff*/
+  var slider = document.getElementById("myRange");
+  var output = document.getElementById("demo");
+  output.innerHTML = slider.value +" sec";
+
+  slider.oninput = function () {
+    output.innerHTML = this.value + " sec";
+  };
+  /*end the  sec interval stuff*/
+
+  var isGridToggled = false;
+  function myFunction() {
+    var elnt = document.getElementById("myCanvas");
+    if (isGridToggled == false) {
+      elnt.style.visibility = "visible";
+      isGridToggled  = true;
+      displayGrid();
+    } else {
+      elnt.style.visibility = "hidden";
+      isGridToggled = false;
+    }
+  }
+
+    //The following code draws a grid on a canvas
+  //in order to get the grid to turn on and off, we will have to stack two canvas' on top of each other:
+  //one canvas will be for the grid, one will be for user drawing. When the grid switch is toggled, the grid canvas is set to visible
+  function displayGrid(){
+    var p = 0;
+    function drawBoard() {
+      //Prints all the vertical lines of the grid
+      for (var x = 0; x <= canvasWidth; x += canvas.getBoundingClientRect().width / 40) {
+        ctx.moveTo(x + p, p);
+        ctx.lineTo(x + p, canvasHeight + p);
+      }
+      //Prints all the horizontal lines of the grid
+      for (var x = 0; x <= canvasHeight; x += canvas.getBoundingClientRect().height / 24) {
+        ctx.moveTo(p, x + p);
+        ctx.lineTo(canvasWidth + p, x + p);
+      }
+      console.log("just did all the steps");
+      ctx.strokeStyle = "black";
+      ctx.stroke();
+    }
+    drawBoard();
+  }
+
+</script>
